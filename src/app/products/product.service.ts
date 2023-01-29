@@ -15,13 +15,20 @@ export class ProductService {
   
   constructor(private http: HttpClient) { }
 
-  getProducts(): Observable<Product[]> {
-    return this.http.get<Product[]>(this.productsUrl)
-      .pipe(
-        tap(data => console.log('Products: ', JSON.stringify(data))),
-        catchError(this.handleError)
-      );
-  }
+  // getProducts(): Observable<Product[]> {
+  //   return this.http.get<Product[]>(this.productsUrl)
+  //     .pipe(
+  //       tap(data => console.log('Products: ', JSON.stringify(data))),
+  //       catchError(this.handleError)
+  //     );
+  // }
+// Declaring getProducts in service and consuming in the component is procedural pattern
+// using Declarative pattern we are declaring the property , and assigning Http get 
+   products$=this.http.get<Product[]>(this.productsUrl)
+       .pipe(
+         tap(data => console.log('Products: ', JSON.stringify(data))),
+         catchError(this.handleError)
+       );
 
   private fakeProduct(): Product {
     return {
