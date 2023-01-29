@@ -7,6 +7,10 @@ import {
   throwError,
   map,
   combineLatest,
+  BehaviorSubject,
+  Subject,
+  merge,
+  scan,
 } from 'rxjs';
 import { Product } from './product';
 import { ProductCategoryService } from '../product-categories/product-category.service';
@@ -18,6 +22,9 @@ export class ProductService {
   private productsUrl = 'api/products';
   //private productsUrl = 'api/product'; // for error testing
   private suppliersUrl = 'api/suppliers';
+
+  private productSelectedSubject = new BehaviorSubject<number>(0);
+  productSelectedAction$ = this.productSelectedSubject.asObservable();
 
   constructor(
     private http: HttpClient,
@@ -70,6 +77,42 @@ export class ProductService {
       )
     )
   );
+  private productInsertedSubject = new Subject<Product>();
+  productedInsertedAction$ = this.productInsertedSubject.asObservable();
+
+  productsWithAdd$ = merge(
+    this.productWithCategory$,
+    this.productedInsertedAction$
+  ).pipe(
+    scan(
+      (acc, value) => (value instanceof Array ? [...value] : [...acc, value]),
+      [] as Product[]
+    )
+  );
+
+  selectedProduct$ = combineLatest([
+    this.productWithCategory$,
+    this.productSelectedAction$,
+  ]).pipe(
+    map(([products, selectedProductId]) =>
+      products.find((product) => product.id === selectedProductId)
+    ),
+    tap((product) => console.log('selectedProduct', product))
+  );
+
+  // this.productWithCategory$.pipe(
+  //   map((products) => products.find((product) => product.id === 5)),
+  //   tap((data) => console.log('selectedProduct', data))
+  // );
+
+  selectedProductChanged(selectedProductId: number): void {
+    this.productSelectedSubject.next(+selectedProductId);
+  }
+
+  addProduct(newProduct?:Product){
+    newProduct=newProduct|| this.fakeProduct();
+    this.productInsertedSubject.next(newProduct);
+  }
 
   private fakeProduct(): Product {
     return {
@@ -79,7 +122,7 @@ export class ProductService {
       description: 'Our new product',
       price: 8.9,
       categoryId: 3,
-      // category: 'Toolbox',
+      category: 'Toolbox',
       quantityInStock: 30,
     };
   }
