@@ -1,19 +1,28 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-
-import { catchError, Observable, tap, throwError } from 'rxjs';
-
+import {
+  catchError,
+  Observable,
+  tap,
+  throwError,
+  map,
+  combineLatest,
+} from 'rxjs';
 import { Product } from './product';
+import { ProductCategoryService } from '../product-categories/product-category.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ProductService {
   private productsUrl = 'api/products';
   //private productsUrl = 'api/product'; // for error testing
   private suppliersUrl = 'api/suppliers';
-  
-  constructor(private http: HttpClient) { }
+
+  constructor(
+    private http: HttpClient,
+    private productCategoryService: ProductCategoryService
+  ) {}
 
   // getProducts(): Observable<Product[]> {
   //   return this.http.get<Product[]>(this.productsUrl)
@@ -22,13 +31,45 @@ export class ProductService {
   //       catchError(this.handleError)
   //     );
   // }
-// Declaring getProducts in service and consuming in the component is procedural pattern
-// using Declarative pattern we are declaring the property , and assigning Http get 
-   products$=this.http.get<Product[]>(this.productsUrl)
-       .pipe(
-         tap(data => console.log('Products: ', JSON.stringify(data))),
-         catchError(this.handleError)
-       );
+  // Declaring getProducts in service and consuming in the component is procedural pattern
+  // using Declarative pattern we are declaring the property , and assigning Http get
+  productsInit$ = this.http.get<Product[]>(this.productsUrl).pipe(
+    //map(item=>item.price *1.5) // http get returns list of array not each element
+    map((products) =>
+      products.map(
+        (product) =>
+          ({
+            ...product, // spread operator copies all the common product properties which are not going to moify/transform
+            price: product.price ? product.price * 1.5 : 0,
+            searchKey: [product.productName],
+          } as Product)
+      )
+    ),
+    tap((data) => console.log('Products: ', JSON.stringify(data))),
+    catchError(this.handleError)
+  );
+
+  products$ = this.http.get<Product[]>(this.productsUrl).pipe(
+    tap((data) => console.log('Products: ', JSON.stringify(data))),
+    catchError(this.handleError)
+  );
+
+  productWithCategory$ = combineLatest([
+    this.products$,
+    this.productCategoryService.productCategories$,
+  ]).pipe(
+    map(([products, categories]) =>
+      products.map(
+        (product) =>
+          ({
+            ...product,
+            price: product.price ? product.price * 1.5 : 0,
+            category: categories.find((c) => product.categoryId === c.id)?.name,
+            searchKey: [product.productName],
+          } as Product)
+      )
+    )
+  );
 
   private fakeProduct(): Product {
     return {
@@ -39,7 +80,7 @@ export class ProductService {
       price: 8.9,
       categoryId: 3,
       // category: 'Toolbox',
-      quantityInStock: 30
+      quantityInStock: 30,
     };
   }
 
@@ -58,5 +99,4 @@ export class ProductService {
     console.error(err);
     return throwError(() => errorMessage);
   }
-
 }

@@ -17,7 +17,7 @@ export class ProductListComponent implements OnInit{ //,OnDestroy {
   // Commented code is not required as we are giving the option sub/unsub to rxjs 
   // by declaring async pipe products$ as below
   //products$:Observable<Product[]> | undefined=this.productService.products$;
-  products$=this.productService.products$
+  products$=this.productService.productWithCategory$
   .pipe(
       catchError(
         err=>{

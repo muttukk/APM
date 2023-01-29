@@ -17,7 +17,6 @@ export class ProductListAltComponent  {
         err=>{
           this.errorMessage=err;
           return EMPTY;
-          //return([]);
         })
     );
   
