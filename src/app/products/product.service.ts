@@ -12,10 +12,15 @@ import {
   merge,
   scan,
   shareReplay,
+  filter,
+  switchMap,
+  forkJoin,
+  of,
 } from 'rxjs';
 import { Product } from './product';
 import { ProductCategoryService } from '../product-categories/product-category.service';
 import { SupplierService } from '../suppliers/supplier.service';
+import { Supplier } from '../suppliers/supplier';
 
 @Injectable({
   providedIn: 'root',
@@ -31,7 +36,7 @@ export class ProductService {
   constructor(
     private http: HttpClient,
     private productCategoryService: ProductCategoryService,
-    private supplierService:SupplierService
+    private supplierService: SupplierService
   ) {}
 
   // getProducts(): Observable<Product[]> {
@@ -78,7 +83,7 @@ export class ProductService {
             searchKey: [product.productName],
           } as Product)
       )
-    ),
+    )
     //shareReplay(1)
   );
   private productInsertedSubject = new Subject<Product>();
@@ -101,7 +106,7 @@ export class ProductService {
     map(([products, selectedProductId]) =>
       products.find((product) => product.id === selectedProductId)
     ),
-    tap((product) => console.log('selectedProduct', product)),
+    tap((product) => console.log('selectedProduct', product))
     //shareReplay(1)
   );
 
@@ -114,8 +119,8 @@ export class ProductService {
     this.productSelectedSubject.next(+selectedProductId);
   }
 
-  addProduct(newProduct?:Product){
-    newProduct=newProduct|| this.fakeProduct();
+  addProduct(newProduct?: Product) {
+    newProduct = newProduct || this.fakeProduct();
     this.productInsertedSubject.next(newProduct);
   }
 
@@ -132,6 +137,34 @@ export class ProductService {
     };
   }
 
+  // All streams data
+  // selectedProductSupplier$ = combineLatest([
+  //   this.selectedProduct$,
+  //   this.supplierService.suppliers$,
+  // ]).pipe(
+  //   map(([selectedProduct, suppliers]) =>
+  //     suppliers.filter((supplier) =>
+  //       selectedProduct?.supplierIds?.includes(supplier.id)
+  //     )
+  //   )
+  // );
+
+  // Just in time approach
+  selectedProductSupplier$ = this.selectedProduct$.pipe(
+    filter((product) => Boolean(product)),
+    switchMap((selectedProduct) => {
+      if (selectedProduct?.supplierIds) {
+        return forkJoin(
+          selectedProduct.supplierIds.map((supplierId) =>
+            this.http.get<Supplier>(`${this.suppliersUrl}/${supplierId}`)
+          )
+        );
+      }else{
+        return of([]);
+      }
+    }),
+    tap(suppliers=>console.log('Product Suppliers',JSON.stringify(suppliers)))
+  );
   private handleError(err: HttpErrorResponse): Observable<never> {
     // in a real world app, we may send the server to some remote logging infrastructure
     // instead of just logging it to the console
