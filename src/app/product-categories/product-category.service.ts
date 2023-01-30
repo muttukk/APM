@@ -14,7 +14,7 @@ export class ProductCategoryService {
   .pipe(
     tap(data=>console.log('categories',JSON.stringify(data))),
     shareReplay(1),
-    tap(()=>console.log('After ShareReplay')),
+    //tap(()=>console.log('After ShareReplay')),
     catchError(this.handleError)
   );
 

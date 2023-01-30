@@ -15,6 +15,7 @@ import {
 } from 'rxjs';
 import { Product } from './product';
 import { ProductCategoryService } from '../product-categories/product-category.service';
+import { SupplierService } from '../suppliers/supplier.service';
 
 @Injectable({
   providedIn: 'root',
@@ -29,7 +30,8 @@ export class ProductService {
 
   constructor(
     private http: HttpClient,
-    private productCategoryService: ProductCategoryService
+    private productCategoryService: ProductCategoryService,
+    private supplierService:SupplierService
   ) {}
 
   // getProducts(): Observable<Product[]> {
@@ -77,7 +79,7 @@ export class ProductService {
           } as Product)
       )
     ),
-    shareReplay(1)
+    //shareReplay(1)
   );
   private productInsertedSubject = new Subject<Product>();
   productedInsertedAction$ = this.productInsertedSubject.asObservable();
@@ -100,7 +102,7 @@ export class ProductService {
       products.find((product) => product.id === selectedProductId)
     ),
     tap((product) => console.log('selectedProduct', product)),
-    shareReplay(1)
+    //shareReplay(1)
   );
 
   // this.productWithCategory$.pipe(
