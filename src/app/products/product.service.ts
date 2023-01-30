@@ -11,6 +11,7 @@ import {
   Subject,
   merge,
   scan,
+  shareReplay,
 } from 'rxjs';
 import { Product } from './product';
 import { ProductCategoryService } from '../product-categories/product-category.service';
@@ -75,7 +76,8 @@ export class ProductService {
             searchKey: [product.productName],
           } as Product)
       )
-    )
+    ),
+    shareReplay(1)
   );
   private productInsertedSubject = new Subject<Product>();
   productedInsertedAction$ = this.productInsertedSubject.asObservable();
@@ -97,7 +99,8 @@ export class ProductService {
     map(([products, selectedProductId]) =>
       products.find((product) => product.id === selectedProductId)
     ),
-    tap((product) => console.log('selectedProduct', product))
+    tap((product) => console.log('selectedProduct', product)),
+    shareReplay(1)
   );
 
   // this.productWithCategory$.pipe(
